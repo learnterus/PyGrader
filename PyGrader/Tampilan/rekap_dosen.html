@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard Dosen - Rekap Nilai</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; background-color: #f4f7f6; }
+        h2 { color: #333; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .status-passed { color: green; font-weight: bold; }
+        .status-wrong { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Rekapitulasi Nilai Ujian Alpro</h2>
+    <p>Berikut adalah daftar mahasiswa yang sudah mengumpulkan tugas:</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>NIM</th>
+                <th>Status</th>
+                <th>Skor</th>
+                <th>Nama File di Server</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for hasil in data_nilai %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ hasil.nim }}</td>
+                <td class="{{ 'status-passed' if hasil.status == 'Passed' else 'status-wrong' }}">
+                    {{ hasil.status }}
+                </td>
+                <td>{{ hasil.skor }}</td>
+                <td><code>{{ hasil.nama_file }}</code></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="d-flex gap-2 mb-4">
+        <a href="/dosen/tambah_soal" class="btn btn-primary">➕ Tambah Soal Baru</a>
+        <a href="/dosen/ekspor" class="btn btn-success">📥 Download Excel</a>
+    </div>
+
+    <br>
+    <a href="/"> Kembali ke Login</a>
+</body>
+</html>
