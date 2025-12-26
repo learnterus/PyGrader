@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 import subprocess
 import os
@@ -51,13 +51,25 @@ if not os.path.exists(UPLOAD_FOLDER):
 def grade_code(file_path, soal_obj):
     try:
 
+        def is_safe_code(file_path):
+            with open(file_path, 'r') as f:
+                content = f.read()
+            
+            # Daftar kata kunci yang dilarang
+            forbidden = ['os.', 'subprocess.', 'shutil.', 'eval(', 'exec(', 'open(', 'socket']
+            
+            for word in forbidden:
+                if word in content:
+                    return False, word
+            return True, None
+        
         process = subprocess.run(
             ['python', file_path],
             input=soal_obj.input_test,
             capture_output=True, text=True, timeout=2
         )
         
-        actual_output = process.stdout.strip()
+        actual_output = process.stdout[:1000].strip()
         expected_output = soal_obj.output_test.strip()
 
         # Cek kriteria yang dipilih dosen
@@ -107,6 +119,7 @@ def login_process():
     user = User.query.filter_by(nim=nim_input).first()
 
     if user and user.password == password_input:
+        session['nim'] = nim_input
         # LOGIKA ACAK SOAL PINDAH KE SINI (Sebelum Redirect)
         existing_sub = Submission.query.filter_by(nim=nim_input).first()
         if not existing_sub:
@@ -124,6 +137,8 @@ def login_process():
     
 @app.route('/dashboard/<nim>')
 def dashboard(nim):
+    if session.get('nim') != nim:
+        return "Akses Ditolak: Anda tidak berwenang melihat dashboard ini."
     # 1. Cari data submission mahasiswa
     sub_info = Submission.query.filter_by(nim=nim).first()
     
@@ -140,9 +155,29 @@ def dashboard(nim):
                            soal=detail_soal, 
                            riwayat=riwayat_mhs)
 
+@app.route('/dosen/login', methods=['GET', 'POST'])
+def login_dosen():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # Hardcoded: Ganti ini dengan username & pass dosen yang kamu mau
+        if username == 'admin_dosen' and password == 'alpro':
+            session['user_role'] = 'dosen' # Simpan status login di session
+            return redirect(url_for('rekap_dosen'))
+        else:
+            flash("Login Dosen Gagal!")
+            
+    return render_template('login_dosen.html')
+
 # Route untuk melihat semua hasil ujian (Dashboard Dosen)
 @app.route('/dosen/rekap')
 def rekap_dosen():
+    
+    if session.get('user_role') != 'dosen':
+        flash("Anda harus login sebagai dosen untuk mengakses halaman ini!")
+        return redirect(url_for('login_dosen'))
+    
     # Mengambil semua data dari tabel Submission di database
     semua_hasil = Submission.query.all()
     return render_template('rekap_dosen.html', data_nilai=semua_hasil)
@@ -212,7 +247,10 @@ def submit_code(nim):
     
     file = request.files['file_tugas']
     
-    # MENGATASI TABRAKAN FILE: Tambahkan NIM di depan nama file
+    if not file.filename.lower().endswith('.py'):
+        flash("Hanya file .py yang diperbolehkan!") # Kirim pesan ke dashboard
+        return redirect(url_for('dashboard', nim=nim))
+    
     filename = f"{nim}_{file.filename}"
     file_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(file_path)
@@ -241,6 +279,11 @@ def submit_code(nim):
     db.session.commit()
     
     return redirect(url_for('dashboard', nim=nim))
+
+@app.route('/logout')
+def logout():
+    session.clear() # Hapus semua data login
+    return redirect(url_for('login_page'))
 
 if __name__ == '__main__':
     app.run(debug=True)
