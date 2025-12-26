@@ -16,7 +16,6 @@
 <body>
     <h2>Rekapitulasi Nilai Ujian Alpro</h2>
     <p>Berikut adalah daftar mahasiswa yang sudah mengumpulkan tugas:</p>
-    
     <table>
         <thead>
             <tr>
@@ -42,9 +41,12 @@
         </tbody>
     </table>
 
-    <div class="d-flex gap-2 mb-4">
-        <a href="/dosen/tambah_soal" class="btn btn-primary">➕ Tambah Soal Baru</a>
-        <a href="/dosen/ekspor" class="btn btn-success">📥 Download Excel</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex gap-2">
+            <a href="/dosen/tambah_soal" class="btn btn-primary">➕ Tambah Soal Baru</a>
+            <a href="/dosen/ekspor" class="btn btn-success">📥 Download Excel</a>
+        </div>
+        <a href="/logout" class="btn btn-outline-danger">Keluar (Logout)</a>
     </div>
 
     <br>
